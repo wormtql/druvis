@@ -2,15 +2,14 @@ use wgpu::util::DeviceExt;
 
 use crate::common::util_traits::AsBytes;
 
-pub struct DataBindingState<T> {
-    pub data: T,
+pub struct DataBindingState {
     pub bind_group_layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup,
     pub buffer: wgpu::Buffer,
 }
 
-impl<T: AsBytes> DataBindingState<T> {
-    pub fn new(device: &wgpu::Device, data: T, label: &str) -> Self {
+impl DataBindingState {
+    pub fn new<T: AsBytes>(device: &wgpu::Device, data: T, label: &str) -> Self {
         let buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some((String::from(label) + "_buffer").as_str()),
@@ -51,14 +50,13 @@ impl<T: AsBytes> DataBindingState<T> {
         );
 
         Self {
-            data,
             bind_group,
             bind_group_layout,
             buffer
         }
     }
 
-    pub fn write_queue(&self, queue: &wgpu::Queue) {
-        queue.write_buffer(&self.buffer, 0, self.data.as_bytes())
-    }
+    // pub fn write_queue(&self, queue: &wgpu::Queue) {
+    //     queue.write_buffer(&self.buffer, 0, self.data.as_bytes())
+    // }
 }

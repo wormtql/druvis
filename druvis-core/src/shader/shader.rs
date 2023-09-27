@@ -1,6 +1,16 @@
 use crate::{vertex::vertex::{ModelVertex, Vertex}, binding::data_binding_state::DataBindingState};
 
-pub struct DruvisShader<'a, T> {
+pub struct ShaderBindState {
+    // value is updated per material
+    pub value_bind_group_layout: wgpu::BindGroupLayout,
+    pub value_bind_group: wgpu::BindGroup,
+    pub value_buffer: wgpu::Buffer,
+
+    pub texture_bind_group_layout: Option<wgpu::BindGroupLayout>,
+}
+
+pub struct DruvisShader<'a> {
+    pub name: String,
     pub shader_module: wgpu::ShaderModule,
     pub render_pipeline_layout: wgpu::PipelineLayout,
     pub render_pipeline: wgpu::RenderPipeline,
@@ -8,10 +18,23 @@ pub struct DruvisShader<'a, T> {
     pub blend_state: Option<wgpu::BlendState>,
     pub is_instancing: bool,
     pub instancing_vertex_buffer_layout: Option<wgpu::VertexBufferLayout<'a>>,
-    pub shader_property_bind_state: DataBindingState<T>
+    
+    pub shader_bind_state: ShaderBindState,
 }
 
-impl<'a, T> DruvisShader<'a, T> {
+impl<'a> DruvisShader<'a> {
+    // pub fn from_source(
+    //     device: &wgpu::Device,
+    //     label: &str,
+    //     camera_bind_group_layout: &wgpu::BindGroupLayout,
+        
+    // )
+
+    pub fn use_shader<'b>(&'a self, render_pass: &'b mut wgpu::RenderPass<'a>) where 'a: 'b {
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(10, &self.shader_bind_state.value_bind_group, &[]);
+    }
+
     pub fn new(
         device: &wgpu::Device,
         label: &str,
@@ -23,15 +46,20 @@ impl<'a, T> DruvisShader<'a, T> {
         cull_mode: wgpu::Face,
         is_instancing: bool,
         instancing_vertex_buffer_layout: Option<wgpu::VertexBufferLayout<'a>>,
-        shader_property_bind_state: DataBindingState<T>
+        shader_bind_state: ShaderBindState,
+        name: &str,
     ) -> Self {
+        let mut bind_group_layouts = Vec::new();
+        bind_group_layouts.push(camera_bind_group_layout);
+        bind_group_layouts.push(&shader_bind_state.value_bind_group_layout);
+        if shader_bind_state.texture_bind_group_layout.is_some() {
+            bind_group_layouts.push(shader_bind_state.texture_bind_group_layout.as_ref().unwrap());
+        }
+
         let render_pipeline_layout = device.create_pipeline_layout(
             &wgpu::PipelineLayoutDescriptor {
                 label: Some((String::from(label) + "_pipeline_layout").as_str()),
-                bind_group_layouts: &[
-                    camera_bind_group_layout,
-                    &shader_property_bind_state.bind_group_layout,
-                ],
+                bind_group_layouts: &bind_group_layouts[..],
                 push_constant_ranges: &[]
             }
         );
@@ -94,10 +122,15 @@ impl<'a, T> DruvisShader<'a, T> {
             blend_state: blend_state.clone(),
             is_instancing,
             instancing_vertex_buffer_layout: instancing_vertex_buffer_layout.clone(),
-            shader_property_bind_state,
+            shader_bind_state,
+            name: String::from(name),
         }
     }
 }
 
 pub trait ShaderTrait {
+}
+
+pub trait ShaderPropertyTrait {
+    fn get_bind_state(device: &wgpu::Device, label: &str) -> ShaderBindState;
 }

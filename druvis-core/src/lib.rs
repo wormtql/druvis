@@ -4,3 +4,5 @@ pub mod binding;
 pub mod common;
 pub mod shader;
 pub mod vertex;
+pub mod material;
+pub mod texture;
