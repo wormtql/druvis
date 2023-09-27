@@ -6,3 +6,7 @@ pub mod shader;
 pub mod vertex;
 pub mod material;
 pub mod texture;
+pub mod rendering;
+pub mod mesh;
+pub mod scene;
+pub mod game_object;

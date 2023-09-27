@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, SquareMatrix};
+use cgmath::Matrix4;
 use winit::event::{VirtualKeyCode, ElementState, MouseScrollDelta};
 
 

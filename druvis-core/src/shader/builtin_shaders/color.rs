@@ -27,7 +27,7 @@ pub struct DruvisColorShader;
 impl DruvisColorShader {
     pub fn create_shader<'a>(
         device: &'a wgpu::Device,
-        camera_bind_group_layout: &'a wgpu::BindGroupLayout,
+        builtin_bind_group_layouts: &'a [wgpu::BindGroupLayout],
         color_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
     ) -> DruvisShader<'a> {
@@ -40,7 +40,7 @@ impl DruvisColorShader {
         DruvisShader::new(
             device,
             "color_shader",
-            &camera_bind_group_layout,
+            builtin_bind_group_layouts,
             shader_module,
             color_format,
             depth_format,
@@ -56,8 +56,3 @@ impl DruvisColorShader {
         )
     }
 }
-
-// pub struct DruvisColorShader<'a> {
-//     pub shader: DruvisShader<'a, DruvisColorShaderProperties>,
-// }
-

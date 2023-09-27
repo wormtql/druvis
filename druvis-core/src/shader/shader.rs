@@ -1,4 +1,4 @@
-use crate::{vertex::vertex::{ModelVertex, Vertex}, binding::data_binding_state::DataBindingState};
+use crate::vertex::vertex::{ModelVertex, Vertex};
 
 pub struct ShaderBindState {
     // value is updated per material
@@ -23,13 +23,6 @@ pub struct DruvisShader<'a> {
 }
 
 impl<'a> DruvisShader<'a> {
-    // pub fn from_source(
-    //     device: &wgpu::Device,
-    //     label: &str,
-    //     camera_bind_group_layout: &wgpu::BindGroupLayout,
-        
-    // )
-
     pub fn use_shader<'b>(&'a self, render_pass: &'b mut wgpu::RenderPass<'a>) where 'a: 'b {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(10, &self.shader_bind_state.value_bind_group, &[]);
@@ -38,7 +31,7 @@ impl<'a> DruvisShader<'a> {
     pub fn new(
         device: &wgpu::Device,
         label: &str,
-        camera_bind_group_layout: &wgpu::BindGroupLayout,
+        builtin_bind_group_layouts: &[wgpu::BindGroupLayout],
         shader_module: wgpu::ShaderModule,
         color_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
@@ -50,7 +43,11 @@ impl<'a> DruvisShader<'a> {
         name: &str,
     ) -> Self {
         let mut bind_group_layouts = Vec::new();
-        bind_group_layouts.push(camera_bind_group_layout);
+        // add built in bind group layouts, including camera/light/ .. etc
+        for item in builtin_bind_group_layouts.iter() {
+            bind_group_layouts.push(item);
+        }
+        // add shader specific bind group layouts
         bind_group_layouts.push(&shader_bind_state.value_bind_group_layout);
         if shader_bind_state.texture_bind_group_layout.is_some() {
             bind_group_layouts.push(shader_bind_state.texture_bind_group_layout.as_ref().unwrap());
@@ -126,9 +123,6 @@ impl<'a> DruvisShader<'a> {
             name: String::from(name),
         }
     }
-}
-
-pub trait ShaderTrait {
 }
 
 pub trait ShaderPropertyTrait {
