@@ -1,4 +1,4 @@
-use std::{rc::Rc, cell::RefCell, any::Any};
+use std::{rc::Rc, cell::RefCell};
 
 use crate::{material::material::DruvisMaterial, mesh::mesh::DruvisMesh};
 
@@ -15,3 +15,7 @@ impl Default for MeshRendererData {
         }
     }
 }
+
+// pub trait MeshRenderExt {
+    // fn draw_mesh_renderer(&mut self, mesh_renderer: &MeshRendererData);
+// }

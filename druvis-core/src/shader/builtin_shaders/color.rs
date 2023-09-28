@@ -37,7 +37,7 @@ pub struct DruvisColorShader;
 impl DruvisColorShader {
     pub fn create_shader(
         device: &wgpu::Device,
-        builtin_bind_group_layouts: &[wgpu::BindGroupLayout],
+        builtin_bind_group_layouts: &[&wgpu::BindGroupLayout],
         color_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
     ) -> DruvisShader {

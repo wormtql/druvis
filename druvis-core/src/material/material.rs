@@ -15,6 +15,10 @@ pub struct DruvisMaterial {
 }
 
 impl DruvisMaterial {
+    pub fn set_property(&mut self, key: &str, value: ShaderPropertyValue) {
+        self.properties.insert(String::from(key), value);
+    }
+
     pub fn use_material<'a, 'b>(&'a self, render_pass: &mut wgpu::RenderPass<'b>) where 'a: 'b {
         render_pass.set_bind_group(BIND_GROUP_INDEX_SHADER_TEXTURE, &self.bind_state.texture_bind_group, &[]);
     }

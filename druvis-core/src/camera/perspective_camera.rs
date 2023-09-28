@@ -3,7 +3,7 @@ use std::f32::consts::FRAC_PI_2;
 use cgmath::{Point3, Rad, Matrix4, Vector3, InnerSpace, perspective, Deg};
 use winit::{event::{ElementState, VirtualKeyCode, MouseScrollDelta}, dpi::PhysicalPosition};
 
-use super::{camera::{GetViewProjectionMatrix, CameraController}, camera_uniform::UpdateCameraUniform};
+use super::{camera::{GetViewProjectionMatrix, CameraController, GetCameraUniform}, camera_uniform::{UpdateCameraUniform, CameraUniform}};
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
@@ -61,6 +61,17 @@ impl PerspectiveCamera {
             znear,
             zfar
         }
+    }
+}
+
+impl GetCameraUniform for PerspectiveCamera {
+    fn get_camera_uniform(&self) -> super::camera_uniform::CameraUniform {
+        let mut uniform = CameraUniform::new();
+        uniform.druvis_world_space_camera_position = [self.position.x, self.position.y, self.position.z, 1.0];
+        uniform.druvis_view_matrix = self.view_matrix().into();
+        uniform.druvis_projection_matrix = self.projection_matrix().into();
+        uniform.druvis_projection_params = [1.0, self.znear, self.zfar, 1.0 / self.zfar];
+        uniform
     }
 }
 

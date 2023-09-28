@@ -60,3 +60,13 @@ impl DruvisGameObject {
         true
     }
 }
+
+pub trait DruvisGameObjectExt {
+    fn add_component<T: Any>(&self, component: DruvisComponent<T>) -> bool;
+}
+
+impl DruvisGameObjectExt for Rc<RefCell<DruvisGameObject>> {
+    fn add_component<T: Any>(&self, component: DruvisComponent<T>) -> bool {
+        DruvisGameObject::add_component(self.clone(), component)
+    }
+}

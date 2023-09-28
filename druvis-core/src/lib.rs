@@ -10,3 +10,5 @@ pub mod rendering;
 pub mod mesh;
 pub mod scene;
 pub mod game_object;
+pub mod render_pipeline;
+pub mod instance;

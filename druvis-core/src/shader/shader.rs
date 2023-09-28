@@ -45,7 +45,7 @@ impl DruvisShader {
     pub fn new(
         device: &wgpu::Device,
         label: &str,
-        builtin_bind_group_layouts: &[wgpu::BindGroupLayout],
+        builtin_bind_group_layouts: &[&wgpu::BindGroupLayout],
         shader_module: wgpu::ShaderModule,
         color_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
@@ -60,7 +60,7 @@ impl DruvisShader {
         // shader_bind_state.value_bind_group_layout
         let mut bind_group_layouts = Vec::new();
         // add built in bind group layouts, including camera/light/ .. etc
-        for item in builtin_bind_group_layouts.iter() {
+        for &item in builtin_bind_group_layouts.iter() {
             bind_group_layouts.push(item);
         }
         // add shader specific bind group layouts

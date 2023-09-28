@@ -10,7 +10,7 @@ impl ShaderManager {
     pub fn load_builtin_shaders(
         &mut self,
         device: &wgpu::Device,
-        builtin_bind_group_layouts: &[wgpu::BindGroupLayout],
+        builtin_bind_group_layouts: &[&wgpu::BindGroupLayout],
         color_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
     ) {
