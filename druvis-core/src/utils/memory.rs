@@ -17,3 +17,15 @@ pub fn get_bytes<T: Sized>(data: &T) -> &[u8] {
         slice
     }
 }
+
+pub fn create_buffer(size: usize) -> Vec<u8> {
+    let mut temp: Vec<u8> = Vec::with_capacity(size as usize);
+    temp.resize(size, 0);
+    temp
+}
+
+pub fn write_buffer(buf: &mut [u8], offset: usize, data: &[u8]) {
+    let data_size = data.len();
+    let buf_range = &mut buf[offset..offset + data_size];
+    buf_range.copy_from_slice(data);
+}

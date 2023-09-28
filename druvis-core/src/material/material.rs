@@ -1,41 +1,51 @@
-use std::rc::Rc;
+use std::{rc::Rc, collections::HashMap};
 
-use crate::{shader::{shader::DruvisShader, shader_manager::ShaderManager}, common::util_traits::AsBytes, binding::{bind_index::BIND_GROUP_INDEX_SHADER_TEXTURE, bind_group_builder::BindGroupBuilder}, texture::texture::DruvisTextureAndSampler};
+use crate::{shader::{shader::DruvisShader, shader_property::ShaderPropertyValue}, binding::{bind_index::BIND_GROUP_INDEX_SHADER_TEXTURE, bind_group_builder::BindGroupBuilder}, texture::texture::DruvisTextureAndSampler, utils};
 
 pub struct MaterialBindState {
     pub texture_bind_group: wgpu::BindGroup,
 }
 
-pub struct DruvisMaterial<'a, T> {
+pub struct DruvisMaterial {
     pub name: String,
-    pub shader: Rc<DruvisShader<'a>>,
-    pub properties: T,
+    pub shader: Rc<DruvisShader>,
+    pub properties: HashMap<String, ShaderPropertyValue>,
     pub textures: Vec<Rc<DruvisTextureAndSampler>>,
     pub bind_state: MaterialBindState,
 }
 
-impl<'a, T: AsBytes> DruvisMaterial<'a, T> {
-    pub fn use_material<'b>(&'a self, render_pass: &'b mut wgpu::RenderPass<'a>) where 'a: 'b {
+impl DruvisMaterial {
+    pub fn use_material<'a, 'b>(&'a self, render_pass: &mut wgpu::RenderPass<'b>) where 'a: 'b {
         render_pass.set_bind_group(BIND_GROUP_INDEX_SHADER_TEXTURE, &self.bind_state.texture_bind_group, &[]);
     }
  
     pub fn update_buffer(&self, queue: &wgpu::Queue) {
-        queue.write_buffer(&self.shader.shader_bind_state.value_buffer, 0, self.properties.as_bytes());
+        let mut buffer_vec = utils::create_buffer(self.shader.shader_value_size);
+        let buffer = buffer_vec.as_mut_slice();
+
+        let mut offset = 0;
+        for item in self.shader.shader_value_layout.iter() {
+            let name = item.name.as_str();
+            let value = self.properties.get(name);
+            if value.is_some() {
+                utils::write_buffer(buffer, offset, value.unwrap().get_bytes());
+            } else {
+                let default_value = item.default_value.get_bytes();
+                utils::write_buffer(buffer, offset, default_value);
+            }
+
+            offset += item.ty.get_size();
+        }
+
+        queue.write_buffer(&self.shader.shader_bind_state.value_buffer, 0, buffer);
     }
 
     pub fn create_material(
         device: &wgpu::Device,
-        shader_manager: &ShaderManager<'a>,
-        shader_name: &str,
-        properties: T,
+        shader: Rc<DruvisShader>,
         textures: &[Rc<DruvisTextureAndSampler>],
         name: &str
     ) -> Option<Self> {
-        let shader = shader_manager.get_shader(shader_name);
-        if shader.is_none() {
-            return None;
-        }
-
         let mut bind_group_builder = BindGroupBuilder::new();
         let mut binding_index = 0_u32;
         for tex in textures.iter() {
@@ -43,7 +53,6 @@ impl<'a, T: AsBytes> DruvisMaterial<'a, T> {
             binding_index += 2;
         }
 
-        let shader = shader.unwrap();
         let mat = DruvisMaterial {
             bind_state: MaterialBindState {
                 texture_bind_group: bind_group_builder.build(
@@ -54,7 +63,7 @@ impl<'a, T: AsBytes> DruvisMaterial<'a, T> {
             },
             name: String::from(name),
             shader,
-            properties,
+            properties: HashMap::new(),
             textures: textures.iter().cloned().collect(),
         };
 

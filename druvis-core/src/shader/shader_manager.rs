@@ -2,15 +2,15 @@ use std::{collections::HashMap, rc::Rc};
 
 use super::{shader::DruvisShader, builtin_shaders::DruvisColorShader};
 
-pub struct ShaderManager<'a> {
-    pub loaded_shaders: HashMap<String, Rc<DruvisShader<'a>>>
+pub struct ShaderManager {
+    pub loaded_shaders: HashMap<String, Rc<DruvisShader>>
 }
 
-impl<'a> ShaderManager<'a> {
+impl ShaderManager {
     pub fn load_builtin_shaders(
         &mut self,
-        device: &'a wgpu::Device,
-        builtin_bind_group_layouts: &'a [wgpu::BindGroupLayout],
+        device: &wgpu::Device,
+        builtin_bind_group_layouts: &[wgpu::BindGroupLayout],
         color_format: wgpu::TextureFormat,
         depth_format: Option<wgpu::TextureFormat>,
     ) {
@@ -29,7 +29,7 @@ impl<'a> ShaderManager<'a> {
         }
     }
 
-    pub fn get_shader(&self, name: &str) -> Option<Rc<DruvisShader<'a>>> {
+    pub fn get_shader(&self, name: &str) -> Option<Rc<DruvisShader>> {
         self.loaded_shaders.get(name).cloned()
     }
 }
