@@ -19,6 +19,7 @@ impl<'a, 'b> DruvisDrawModel<'a> for wgpu::RenderPass<'b> where 'a: 'b
         self.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
 
         material.use_material(self);
+        // self.draw_indexed(0..3, 0, instances);
         self.draw_indexed(0..mesh.num_elements, 0, instances);
     }
 }

@@ -1,6 +1,7 @@
 use cgmath::Vector4;
+use wgpu::util::DeviceExt;
 
-use crate::{shader::{shader::{DruvisShader, ShaderPropertyTrait, ShaderBindState}, shader_property::{ShaderPropertyLayoutEntry, ShaderPropertyType, ShaderPropertyValue}}, binding::data_binding_state::DataBindingState};
+use crate::{shader::{shader::{DruvisShader, ShaderPropertyTrait, ShaderBindState}, shader_property::{ShaderPropertyLayoutEntry, ShaderPropertyType, ShaderPropertyValue}}, binding::data_binding_state::DataBindingState, common::util_traits::AsBytes};
 
 #[repr(C)]
 pub struct DruvisColorShaderProperties {
@@ -12,12 +13,39 @@ impl ShaderPropertyTrait for DruvisColorShaderProperties {
         let data = Self {
             color: Vector4::new(0.0, 0.0, 0.0, 0.0)
         };
-        let bind_state = DataBindingState::new(device, data, label);
+
+        let buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some((String::from(label) + "_buffer").as_str()),
+                contents: data.druvis_as_bytes(),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST
+            }
+        );
+
+        let bind_group_layout = device.create_bind_group_layout(
+            &wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }
+                ],
+                label: Some((String::from(label) + "_bind_group_layout").as_str()),
+            }
+        );
+        // println!("{:?}", bind_group_layout);
+
         ShaderBindState {
-            value_bind_group_layout: bind_state.bind_group_layout,
-            value_bind_group: bind_state.bind_group,
-            value_buffer: bind_state.buffer,
-            texture_bind_group_layout: None,
+            value_bind_group_layout: bind_group_layout,
+            // value_bind_group: bind_state.bind_group,
+            value_buffer: buffer,
+            // texture_bind_group_layout: None,
         }
     }
 
@@ -29,6 +57,10 @@ impl ShaderPropertyTrait for DruvisColorShaderProperties {
                 default_value: ShaderPropertyValue::Vec4(Vector4 { x: 1.0, y: 0.0, z: 0.0, w: 0.0 })
             }
         ]
+    }
+
+    fn get_shader_texture_layout() -> Vec<crate::shader::shader_property::ShaderTextureLayoutEntry> {
+        vec![]
     }
 }
 
@@ -62,6 +94,7 @@ impl DruvisColorShader {
             false,
             None,
             DruvisColorShaderProperties::get_shader_value_layout(),
+            DruvisColorShaderProperties::get_shader_texture_layout(),
             DruvisColorShaderProperties::get_bind_state(device, "color_shader"),
             "druvis/color"
         )

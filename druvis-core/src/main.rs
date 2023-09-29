@@ -1,3 +1,3 @@
 fn main() {
-    println!("Hello, world!");
+    pollster::block_on(druvis_core::instance::instance::run());
 }

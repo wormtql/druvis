@@ -15,7 +15,7 @@ impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
         // update camera uniform
         let queue = render_data.queue;
         let camera_uniform = render_data.camera.get_camera_uniform();
-        queue.write_buffer(&render_data.camera_bind_state.buffer, 0, camera_uniform.as_bytes());
+        queue.write_buffer(&render_data.camera_bind_state.buffer, 0, camera_uniform.druvis_as_bytes());
 
         let components = render_data.scene.get_components::<MeshRendererData>();
 
@@ -37,8 +37,7 @@ impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
             let transform_uniform = TransformationUniform {
                 druvis_matrix_m: transform.borrow().data.get_model_matrix()
             };
-            queue.write_buffer(&render_data.transform_bind_state.buffer, 0, transform_uniform.as_bytes());
-            
+            queue.write_buffer(&render_data.transform_bind_state.buffer, 0, transform_uniform.druvis_as_bytes());
 
             let mut encoder = render_data.device.create_command_encoder(
                 &wgpu::CommandEncoderDescriptor {
@@ -48,6 +47,8 @@ impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
 
             let mesh_borrow = mesh.borrow();
             let material_borrow = material.borrow();
+
+            material_borrow.update_buffer(queue);
     
             {
                 let mut render_pass = encoder.begin_render_pass(
@@ -58,7 +59,7 @@ impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
                             resolve_target: None,
                             ops: wgpu::Operations {
                                 load: wgpu::LoadOp::Clear(wgpu::Color {
-                                    r: 0.1,
+                                    r: 0.2,
                                     g: 0.2,
                                     b: 0.3,
                                     a: 1.0
@@ -77,6 +78,10 @@ impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
                         // })
                     }
                 );
+
+                // bind camera/transform
+                render_pass.set_bind_group(0, &render_data.camera_bind_state.bind_group, &[]);
+                render_pass.set_bind_group(1, &render_data.transform_bind_state.bind_group, &[]);
     
                 render_pass.draw_mesh(&*mesh_borrow, &*material_borrow);
             }

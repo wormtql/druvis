@@ -14,7 +14,7 @@ impl ShaderPropertyType {
         match *self {
             ShaderPropertyType::Mat4 => 16 * 4,
             ShaderPropertyType::Vec4 => 4 * 4,
-            ShaderPropertyType::U32 => 4
+            ShaderPropertyType::U32 => 4,
         }
     }
 }
@@ -28,9 +28,9 @@ pub enum ShaderPropertyValue {
 impl ShaderPropertyValue {
     pub fn get_bytes(&self) -> &[u8] {
         match self {
-            ShaderPropertyValue::Vec4(x) => x.as_bytes(),
-            ShaderPropertyValue::Mat4(x) => x.as_bytes(),
-            ShaderPropertyValue::U32(x) => x.as_bytes(),
+            ShaderPropertyValue::Vec4(x) => x.druvis_as_bytes(),
+            ShaderPropertyValue::Mat4(x) => x.druvis_as_bytes(),
+            ShaderPropertyValue::U32(x) => x.druvis_as_bytes(),
         }
     }
 }
@@ -39,4 +39,8 @@ pub struct ShaderPropertyLayoutEntry {
     pub ty: ShaderPropertyType,
     pub name: String,
     pub default_value: ShaderPropertyValue,
+}
+
+pub struct ShaderTextureLayoutEntry {
+    pub name: String,
 }

@@ -1,6 +1,6 @@
 use crate::vertex::vertex::{ModelVertex, Vertex};
 
-use super::shader_property::ShaderPropertyLayoutEntry;
+use super::shader_property::{ShaderPropertyLayoutEntry, ShaderTextureLayoutEntry};
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub struct OwnedVertexBufferLayout {
@@ -15,10 +15,10 @@ pub struct OwnedVertexBufferLayout {
 pub struct ShaderBindState {
     // value is updated per material
     pub value_bind_group_layout: wgpu::BindGroupLayout,
-    pub value_bind_group: wgpu::BindGroup,
+    // pub value_bind_group: wgpu::BindGroup,
     pub value_buffer: wgpu::Buffer,
 
-    pub texture_bind_group_layout: Option<wgpu::BindGroupLayout>,
+    // pub texture_bind_group_layout: Option<wgpu::BindGroupLayout>,
 }
 
 pub struct DruvisShader {
@@ -32,6 +32,7 @@ pub struct DruvisShader {
     pub instancing_vertex_buffer_layout: Option<OwnedVertexBufferLayout>,
     
     pub shader_value_layout: Vec<ShaderPropertyLayoutEntry>,
+    pub shader_texture_layout: Vec<ShaderTextureLayoutEntry>,
     pub shader_value_size: usize,
     pub shader_bind_state: ShaderBindState,
 }
@@ -39,7 +40,7 @@ pub struct DruvisShader {
 impl DruvisShader {
     pub fn use_shader<'a, 'b>(&'b self, render_pass: &mut wgpu::RenderPass<'a>) where 'b: 'a {
         render_pass.set_pipeline(&self.render_pipeline);
-        render_pass.set_bind_group(10, &self.shader_bind_state.value_bind_group, &[]);
+        // render_pass.set_bind_group(10, &self.shader_bind_state.value_bind_group, &[]);
     }
 
     pub fn new(
@@ -54,6 +55,7 @@ impl DruvisShader {
         is_instancing: bool,
         instancing_vertex_buffer_layout: Option<OwnedVertexBufferLayout>,
         shader_value_layout: Vec<ShaderPropertyLayoutEntry>,
+        shader_texture_layout: Vec<ShaderTextureLayoutEntry>,
         shader_bind_state: ShaderBindState,
         name: &str,
     ) -> Self {
@@ -65,9 +67,10 @@ impl DruvisShader {
         }
         // add shader specific bind group layouts
         bind_group_layouts.push(&shader_bind_state.value_bind_group_layout);
-        if shader_bind_state.texture_bind_group_layout.is_some() {
-            bind_group_layouts.push(shader_bind_state.texture_bind_group_layout.as_ref().unwrap());
-        }
+        // println!("{:?}", bind_group_layouts);
+        // if shader_bind_state.texture_bind_group_layout.is_some() {
+        //     bind_group_layouts.push(shader_bind_state.texture_bind_group_layout.as_ref().unwrap());
+        // }
 
         let render_pipeline_layout = device.create_pipeline_layout(
             &wgpu::PipelineLayoutDescriptor {
@@ -142,6 +145,7 @@ impl DruvisShader {
             instancing_vertex_buffer_layout: instancing_vertex_buffer_layout.clone(),
             shader_bind_state,
             shader_value_layout,
+            shader_texture_layout,
             shader_value_size: value_size,
             name: String::from(name),
         }
@@ -152,4 +156,6 @@ pub trait ShaderPropertyTrait {
     fn get_bind_state(device: &wgpu::Device, label: &str) -> ShaderBindState;
 
     fn get_shader_value_layout() -> Vec<ShaderPropertyLayoutEntry>;
+
+    fn get_shader_texture_layout() -> Vec<ShaderTextureLayoutEntry>;
 }

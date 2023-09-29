@@ -1,4 +1,4 @@
-use std::{rc::Rc, cell::RefCell, any::Any};
+use std::{rc::Rc, cell::RefCell, any::Any, collections::HashMap};
 
 use cgmath::Vector4;
 use wgpu::{BindGroupLayout, TextureFormat};
@@ -54,10 +54,10 @@ impl DruvisScene {
         let mut material = DruvisMaterial::create_material(
             device,
             Rc::new(shader),
-            &[],
+            HashMap::new(),
             "simple_material"
         ).unwrap();
-        material.set_property("color", ShaderPropertyValue::Vec4(Vector4::new(0.1, 0.2, 0.3, 1.0)));
+        material.set_property("color", ShaderPropertyValue::Vec4(Vector4::new(0.5, 0.2, 0.1, 1.0)));
 
         mesh_renderer.data.material = Some(Rc::new(RefCell::new(material)));
 

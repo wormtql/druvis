@@ -1,7 +1,7 @@
 use cgmath::Point3;
 use wgpu::util::DeviceExt;
 
-use crate::{vertex::vertex::ModelVertex, common::util_traits::AsBytes};
+use crate::{vertex::vertex::ModelVertex, common::util_traits::AsBytes, utils};
 
 pub struct DruvisMesh {
     pub vertex_buffer: wgpu::Buffer,
@@ -54,19 +54,26 @@ impl DruvisMesh {
             4, 8, 5, 4, 5, 1,
             5, 8, 7, 5, 7, 6,
         ];
+        for i in 0..indices.len() {
+            indices[i] -= 1;
+        }
+
+        // println!("model vertex size: {}", std::mem::size_of::<ModelVertex>());
+        // println!("{}", vertices.as_bytes().len());
+        // println!("{:?}", utils::reinterpret_slice::<ModelVertex, f32>(&vertices));
 
         let vertex_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("cube_vertex_buffer"),
-                contents: vertices.as_bytes(),
+                contents: utils::reinterpret_slice::<ModelVertex, u8>(&vertices),
                 usage: wgpu::BufferUsages::VERTEX
             }
         );
         let index_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
                 label: Some("cube_index_buffer"),
-                contents: indices.as_bytes(),
-                usage: wgpu::BufferUsages::VERTEX
+                contents: indices.druvis_as_bytes(),
+                usage: wgpu::BufferUsages::INDEX
             }
         );
 

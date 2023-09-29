@@ -137,7 +137,7 @@ impl DruvisInstance {
         let camera_bind_state = DataBindingState::new(&device, camera.get_camera_uniform(), "camera_uniform");
         let transform_bind_state = DataBindingState::new(&device, TransformationUniform::new(), "transform_uniform");
 
-        let mut scene = DruvisScene::simple_test_scene(
+        let scene = DruvisScene::simple_test_scene(
             &device,
             &[&camera_bind_state.bind_group_layout, &transform_bind_state.bind_group_layout],
             surface_format,

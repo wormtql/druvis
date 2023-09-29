@@ -11,6 +11,14 @@ impl<'a> BindGroupBuilder<'a> {
         }
     }
 
+    pub fn add_buffer<'b>(&mut self, binding_index: u32, buffer: &'b wgpu::Buffer) -> &mut Self where 'b: 'a {
+        self.entries.push(wgpu::BindGroupEntry {
+            binding: binding_index,
+            resource: buffer.as_entire_binding(),
+        });
+        self
+    }
+
     pub fn add_texture(&mut self, binding_index: u32, texture_view: &'a wgpu::TextureView) -> &mut Self {
         self.entries.push(wgpu::BindGroupEntry {
             binding: binding_index,

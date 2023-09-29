@@ -29,3 +29,18 @@ pub fn write_buffer(buf: &mut [u8], offset: usize, data: &[u8]) {
     let buf_range = &mut buf[offset..offset + data_size];
     buf_range.copy_from_slice(data);
 }
+
+pub fn reinterpret_slice<T, U>(buf: &[T]) -> &[U] {
+    let size1 = mem::size_of::<T>();
+    let size2 = mem::size_of::<U>();
+
+    if buf.len() * size1 % size2 != 0 {
+        panic!("cannot reinterpret");
+    }
+    let elements = buf.len() * size1 / size2;
+
+    unsafe {
+        let ptr = buf.as_ptr() as *const U;
+        std::slice::from_raw_parts(ptr, elements)
+    }
+}
