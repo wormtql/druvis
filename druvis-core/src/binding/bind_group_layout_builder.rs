@@ -3,11 +3,32 @@ pub struct BindGroupLayoutBuilder {
 }
 
 impl BindGroupLayoutBuilder {
+    pub fn new() -> Self {
+        Self {
+            descriptors: Vec::new(),
+        }
+    }
+
     pub fn build(&self, device: &wgpu::Device, label: &str) -> wgpu::BindGroupLayout {
         device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {
                 entries: &self.descriptors[..],
                 label: Some(label),
+            }
+        )
+    }
+
+    pub fn add_buffer_entry(&mut self, device: &wgpu::Device, binding: u32) -> &mut Self {
+        self.add_entry(
+            wgpu::BindGroupLayoutEntry {
+                binding,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None
+                },
+                count: None
             }
         )
     }

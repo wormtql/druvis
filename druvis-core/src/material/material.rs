@@ -25,8 +25,14 @@ impl DruvisMaterial {
         self.texture_properties.insert(String::from(key), value);
     }
 
-    pub fn use_material<'a, 'b>(&'a self, render_pass: &mut wgpu::RenderPass<'b>) where 'a: 'b {
-        self.shader.use_shader(render_pass);
+    pub fn use_material<'a, 'b>(
+        &'a self,
+        device: &wgpu::Device,
+        render_pass: &mut wgpu::RenderPass<'b>,
+        color_format: wgpu::TextureFormat,
+        depth_format: Option<wgpu::TextureFormat>,
+    ) where 'a: 'b {
+        self.shader.use_shader(device, render_pass, color_format, depth_format);
         render_pass.set_bind_group(BIND_GROUP_SHADER_PROPERTIES, &self.bind_state.shader_properties_bind_group, &[]);
     }
  

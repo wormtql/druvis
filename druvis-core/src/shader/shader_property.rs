@@ -1,12 +1,21 @@
 use cgmath::{Vector4, Matrix4};
+use serde::{Serialize, Deserialize};
 
 use crate::common::util_traits::AsBytes;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize)]
 pub enum ShaderPropertyType {
     Vec4,
     Mat4,
     U32,
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize)]
+pub enum ShaderTexturePropertyType {
+    Texture,
+    Sampler,
 }
 
 impl ShaderPropertyType {
@@ -19,6 +28,7 @@ impl ShaderPropertyType {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ShaderPropertyValue {
     Vec4(Vector4<f32>),
     Mat4(Matrix4<f32>),
@@ -35,12 +45,17 @@ impl ShaderPropertyValue {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ShaderPropertyLayoutEntry {
     pub ty: ShaderPropertyType,
     pub name: String,
     pub default_value: ShaderPropertyValue,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ShaderTextureLayoutEntry {
+    pub ty: ShaderTexturePropertyType,
     pub name: String,
+    pub texture_view_dimension: Option<wgpu::TextureViewDimension>,
+    pub sampler_type: Option<wgpu::SamplerBindingType>,
 }

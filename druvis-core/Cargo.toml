@@ -6,9 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wgpu = "0.17"
-cgmath = "0.18.0"
+wgpu = { version = "0.17", features = ["serde", "trace", "replay"] }
+cgmath = { version = "0.18.0", features = ["serde"] }
 winit = "0.28"
 instant = "0.1"
 bytemuck = { version = "1.14", features = [ "derive" ] }
 pollster = "0.3"
+serde = { version = "1", features = [ "derive" ] }
+serde_json = "1"
+anyhow = "1"

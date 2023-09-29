@@ -83,9 +83,14 @@ impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
                 render_pass.set_bind_group(0, &render_data.camera_bind_state.bind_group, &[]);
                 render_pass.set_bind_group(1, &render_data.transform_bind_state.bind_group, &[]);
     
-                render_pass.draw_mesh(&*mesh_borrow, &*material_borrow);
-            }
-            
+                render_pass.draw_mesh(
+                    render_data.device,
+                    &*mesh_borrow,
+                    &*material_borrow,
+                    render_data.surface_config.format,
+                    None
+                );
+            }            
 
             queue.submit(std::iter::once(encoder.finish()));
         }

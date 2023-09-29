@@ -1,6 +1,8 @@
+use std::path::Path;
+
 use winit::{window::{Window, WindowBuilder}, event_loop::{EventLoop, ControlFlow}, event::{Event, WindowEvent, KeyboardInput, MouseButton, ElementState, VirtualKeyCode, DeviceEvent}};
 
-use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::GetCameraUniform, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline, RenderData}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform};
+use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::GetCameraUniform, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline, RenderData}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform, shader::shader_manager::ShaderManager};
 
 pub struct DruvisInstance {
     pub surface: Option<wgpu::Surface>,
@@ -21,6 +23,8 @@ pub struct DruvisInstance {
     pub render_pipeline: SimpleRenderPipeline,
 
     pub scene: DruvisScene,
+
+    pub shader_manager: ShaderManager,
 }
 
 impl DruvisInstance {
@@ -137,11 +141,15 @@ impl DruvisInstance {
         let camera_bind_state = DataBindingState::new(&device, camera.get_camera_uniform(), "camera_uniform");
         let transform_bind_state = DataBindingState::new(&device, TransformationUniform::new(), "transform_uniform");
 
+        let mut shader_manager = ShaderManager::new();
+        shader_manager.add_search_path(Path::new("E:\\rust\\druvis\\druvis-core\\shaders").to_path_buf());
+
         let scene = DruvisScene::simple_test_scene(
             &device,
             &[&camera_bind_state.bind_group_layout, &transform_bind_state.bind_group_layout],
             surface_format,
-            None
+            None,
+            &shader_manager,
         );
 
         Self {
@@ -158,6 +166,7 @@ impl DruvisInstance {
             scene,
             camera_bind_state,
             transform_bind_state,
+            shader_manager,
         }
     }
 }

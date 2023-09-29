@@ -1,0 +1,29 @@
+{
+    "name": "druvis.color",
+    "source": "",
+    "cull_mode": "back",
+    "blend_mode": {
+        "color": {
+            "srcFactor": "one",
+            "dstFactor": "zero",
+            "operation": "add"
+        },
+        "alpha": {
+            "srcFactor": "one",
+            "dstFactor": "zero",
+            "operation": "add"
+        }
+    },
+    "is_instancing": false,
+    "instancing_vertex_buffer_layout": null,
+    "shader_value_layout": [
+        {
+            "ty": "Vec4",
+            "name": "color",
+            "default_value": {
+                "Vec4": { "x": 0, "y": 0, "z": 0, "w": 0 }
+            }
+        }
+    ],
+    "shader_texture_layout": []
+}

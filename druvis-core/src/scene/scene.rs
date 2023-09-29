@@ -3,7 +3,7 @@ use std::{rc::Rc, cell::RefCell, any::Any, collections::HashMap};
 use cgmath::Vector4;
 use wgpu::{BindGroupLayout, TextureFormat};
 
-use crate::{game_object::{game_object::{DruvisGameObject, DruvisGameObjectExt}, DruvisComponent, components::MeshRendererData}, mesh::mesh::DruvisMesh, shader::{shader::DruvisShader, builtin_shaders::DruvisColorShader, shader_property::ShaderPropertyValue}, material::material::DruvisMaterial};
+use crate::{game_object::{game_object::{DruvisGameObject, DruvisGameObjectExt}, DruvisComponent, components::MeshRendererData}, mesh::mesh::DruvisMesh, shader::{shader::DruvisShader, shader_property::ShaderPropertyValue, shader_manager::ShaderManager}, material::material::DruvisMaterial};
 
 pub struct DruvisScene {
     pub objects: Vec<Rc<RefCell<DruvisGameObject>>>,
@@ -38,22 +38,25 @@ impl DruvisScene {
         device: &wgpu::Device,
         builtin_bind_group_layouts: &[&BindGroupLayout],
         color_format: TextureFormat,
-        depth_format: Option<TextureFormat>
+        depth_format: Option<TextureFormat>,
+        shader_manager: &ShaderManager,
     ) -> DruvisScene {
         let mut go = DruvisGameObject::new();
 
         let mut mesh_renderer = DruvisComponent::<MeshRendererData>::default();
         mesh_renderer.data.mesh = Some(Rc::new(RefCell::new(DruvisMesh::create_cube_mesh(device))));
 
-        let shader = DruvisColorShader::create_shader(
-            device,
-            builtin_bind_group_layouts,
-            color_format,
-            depth_format
-        );
+        let shader = shader_manager.get_shader(device, builtin_bind_group_layouts, "druvis.color").unwrap();
+
+        // let shader = DruvisColorShader::create_shader(
+        //     device,
+        //     builtin_bind_group_layouts,
+        //     color_format,
+        //     depth_format
+        // );
         let mut material = DruvisMaterial::create_material(
             device,
-            Rc::new(shader),
+            shader,
             HashMap::new(),
             "simple_material"
         ).unwrap();
