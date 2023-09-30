@@ -1,6 +1,8 @@
 use std::{rc::Rc, collections::HashMap, cell::RefCell};
 
-use crate::{shader::{shader::DruvisShader, shader_property::ShaderPropertyValue}, binding::{bind_index::{BIND_GROUP_SHADER_PROPERTIES}, bind_group_builder::BindGroupBuilder}, texture::texture::DruvisTextureAndSampler, utils};
+use crate::{shader::{shader::DruvisShader, shader_property::ShaderPropertyValue, shader_manager::ShaderManager}, binding::{bind_index::{BIND_GROUP_SHADER_PROPERTIES}, bind_group_builder::BindGroupBuilder}, texture::texture::DruvisTextureAndSampler, utils};
+
+use super::material_descriptor::MaterialDescriptor;
 
 pub struct MaterialBindState {
     // pub texture_bind_group: wgpu::BindGroup,
@@ -17,8 +19,43 @@ pub struct DruvisMaterial {
 }
 
 impl DruvisMaterial {
+    pub fn from_descriptor(
+        device: &wgpu::Device,
+        builtin_bind_group_layouts: &[&wgpu::BindGroupLayout],
+        shader_manager: &ShaderManager,
+        desc: &MaterialDescriptor
+    ) -> Option<Self> {
+        let mut textures = HashMap::new();
+
+        // set textures
+        // todo
+        
+        let shader = shader_manager.get_shader(device, builtin_bind_group_layouts, &desc.shader_name)?;
+        
+        let mut mat = DruvisMaterial::create_material(device, shader, textures, &desc.name)?;
+
+        // set properties
+        for prop in desc.properties.iter() {
+            mat.set_property(prop.0, prop.1.clone());
+        }
+
+        Some(mat)
+    }
+    
     pub fn set_property(&mut self, key: &str, value: ShaderPropertyValue) {
-        self.properties.insert(String::from(key), value);
+        let mut flag = false;
+        for item in self.shader.shader_value_layout.iter() {
+            if item.name == key {
+                flag = true;
+                break;
+            }
+        }
+
+        if flag {
+            self.properties.insert(String::from(key), value);
+        } else {
+            panic!("Shader property {} does not exist", key);
+        }
     }
 
     pub fn set_texture_property(&mut self, key: &str, value: Rc<DruvisTextureAndSampler>) {

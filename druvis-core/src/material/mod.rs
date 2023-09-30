@@ -1,2 +1,3 @@
 pub mod material;
-pub mod builtin_materials;
+pub mod material_descriptor;
+pub mod material_manager;

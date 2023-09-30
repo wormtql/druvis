@@ -2,7 +2,7 @@ use std::path::Path;
 
 use winit::{window::{Window, WindowBuilder}, event_loop::{EventLoop, ControlFlow}, event::{Event, WindowEvent, KeyboardInput, MouseButton, ElementState, VirtualKeyCode, DeviceEvent}, dpi::PhysicalSize};
 
-use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::{GetCameraUniform, CameraController}, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform, shader::shader_manager::ShaderManager, rendering::{render_state::RenderState, uniform::{PerFrameUniform, PerObjectUniform}}};
+use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::{GetCameraUniform, CameraController}, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform, shader::shader_manager::ShaderManager, rendering::{render_state::RenderState, uniform::{PerFrameUniform, PerObjectUniform}}, material::material_manager::MaterialManager};
 
 pub struct DruvisInstance {
     // device and surface
@@ -28,6 +28,7 @@ pub struct DruvisInstance {
 
     // resource managers
     pub shader_manager: ShaderManager,
+    pub material_manager: MaterialManager,
 }
 
 impl DruvisInstance {
@@ -150,15 +151,17 @@ impl DruvisInstance {
         // todo use more robust path
         shader_manager.add_search_path(Path::new("E:\\rust\\druvis\\druvis-core\\shaders").to_path_buf());
 
+        let mut material_manager = MaterialManager::new();
+        material_manager.add_search_path(Path::new("E:\\rust\\druvis\\druvis-core\\materials").to_path_buf());
+
         let scene = DruvisScene::simple_test_scene(
             &device,
             &[
                 &PerFrameUniform::get_bind_group_layout(&device),
                 &PerObjectUniform::get_bind_group_layout(&device),
             ],
-            surface_format,
-            None,
             &shader_manager,
+            &material_manager,
         );
 
         Self {
@@ -174,6 +177,7 @@ impl DruvisInstance {
             // render_pipeline,
             scene,
             shader_manager,
+            material_manager,
             render_state,
             mouse_pressed: false,
         }

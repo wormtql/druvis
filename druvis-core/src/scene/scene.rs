@@ -3,7 +3,7 @@ use std::{rc::Rc, cell::RefCell, any::Any, collections::HashMap};
 use cgmath::Vector4;
 use wgpu::{BindGroupLayout, TextureFormat};
 
-use crate::{game_object::{game_object::{DruvisGameObject, DruvisGameObjectExt}, DruvisComponent, components::MeshRendererData}, mesh::mesh::DruvisMesh, shader::{shader::DruvisShader, shader_property::ShaderPropertyValue, shader_manager::ShaderManager}, material::material::DruvisMaterial};
+use crate::{game_object::{game_object::{DruvisGameObject, DruvisGameObjectExt}, DruvisComponent, components::MeshRendererData}, mesh::mesh::DruvisMesh, shader::{shader::DruvisShader, shader_property::ShaderPropertyValue, shader_manager::ShaderManager}, material::{material::DruvisMaterial, material_manager::MaterialManager}};
 
 pub struct DruvisScene {
     pub objects: Vec<Rc<RefCell<DruvisGameObject>>>,
@@ -37,32 +37,24 @@ impl DruvisScene {
     pub fn simple_test_scene(
         device: &wgpu::Device,
         builtin_bind_group_layouts: &[&BindGroupLayout],
-        color_format: TextureFormat,
-        depth_format: Option<TextureFormat>,
         shader_manager: &ShaderManager,
+        material_manager: &MaterialManager,
     ) -> DruvisScene {
         let mut go = DruvisGameObject::new();
 
         let mut mesh_renderer = DruvisComponent::<MeshRendererData>::default();
         mesh_renderer.data.mesh = Some(Rc::new(RefCell::new(DruvisMesh::create_cube_mesh(device))));
 
-        let shader = shader_manager.get_shader(device, builtin_bind_group_layouts, "druvis.color").unwrap();
+        // let shader = shader_manager.get_shader(device, builtin_bind_group_layouts, "druvis.color").unwrap();
 
-        // let shader = DruvisColorShader::create_shader(
-        //     device,
-        //     builtin_bind_group_layouts,
-        //     color_format,
-        //     depth_format
-        // );
-        let mut material = DruvisMaterial::create_material(
+        let material = material_manager.get_material(
+            "druvis.color",
             device,
-            shader,
-            HashMap::new(),
-            "simple_material"
-        ).unwrap();
-        material.set_property("color", ShaderPropertyValue::Vec4(Vector4::new(0.5, 0.2, 0.1, 1.0)));
+            builtin_bind_group_layouts,
+            shader_manager
+        );
 
-        mesh_renderer.data.material = Some(Rc::new(RefCell::new(material)));
+        mesh_renderer.data.material = material;
 
         go.add_component(mesh_renderer);
 
