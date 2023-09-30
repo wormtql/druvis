@@ -1,5 +1,6 @@
 use std::mem;
 use anyhow::Result;
+use druvis_core::{mesh::mesh::DruvisMesh, vertex::vertex::ModelVertex};
 use crate::{utils, pmx::structs::{PMXVertexData, PMXMaterialData}};
 
 use super::structs::{PMXHeaderRaw, PMXGlobalsRaw, PMXGlobals, PMXHeader, PMXSurfaceData};
@@ -13,12 +14,57 @@ pub struct PMXFormat {
     pub materials: Vec<PMXMaterialData>,
 }
 
+impl PMXFormat {
+    pub fn to_druvis_mesh(self, device: &wgpu::Device) -> DruvisMesh {
+        let mut vertices: Vec<ModelVertex> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
+        let mut submeshes: Vec<(u64, u64)> = Vec::new();
+
+        for v in self.vertices.iter() {
+            let model_vertex = ModelVertex {
+                position: v.position.clone(),
+                tex_coords: v.uv.clone(),
+                normal: v.normal.clone(),
+                // todo calculate tangents
+                tangent: [0.0, 0.0, 0.0],
+                bitangent: [0.0, 0.0, 0.0]
+            };
+            vertices.push(model_vertex);
+        }
+        for surface in self.surfaces.iter() {
+            indices.push(surface.triangle[0] as u32);
+            indices.push(surface.triangle[1] as u32);
+            indices.push(surface.triangle[2] as u32);
+        }
+
+        let mut start: u64 = 0;
+        for mat in self.materials.iter() {
+            submeshes.push((start, mat.surface_count as u64));
+            start += mat.surface_count as u64;
+        }
+
+        DruvisMesh::new(
+            device,
+            &self.header.model_name_local,
+            vertices,
+            indices,
+            submeshes
+        )
+    }
+}
+
 pub struct PmxParser {
 
 }
 
 impl PmxParser {
-    pub fn parse_header(&self, data: &[u8], cursor: &mut usize) -> Result<PMXHeaderRaw> {
+    pub fn new() -> Self {
+        PmxParser {  }
+    }
+}
+
+impl PmxParser {
+    fn parse_header(&self, data: &[u8], cursor: &mut usize) -> Result<PMXHeaderRaw> {
         let mut result = PMXHeaderRaw::new();
         result.signature = utils::read::<[i8; 4]>(data, cursor);
         result.version = utils::read::<f32>(data, cursor);

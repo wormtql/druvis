@@ -2,28 +2,27 @@ use std::path::Path;
 
 use winit::{window::{Window, WindowBuilder}, event_loop::{EventLoop, ControlFlow}, event::{Event, WindowEvent, KeyboardInput, MouseButton, ElementState, VirtualKeyCode, DeviceEvent}};
 
-use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::GetCameraUniform, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline, RenderData}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform, shader::shader_manager::ShaderManager};
+use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::GetCameraUniform, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform, shader::shader_manager::ShaderManager, rendering::{render_state::RenderState, uniform::{PerFrameUniform, PerObjectUniform}}};
 
 pub struct DruvisInstance {
+    // device and surface
     pub surface: Option<wgpu::Surface>,
+    pub surface_config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
-    pub surface_config: wgpu::SurfaceConfiguration,
-    
-    pub camera_bind_state: DataBindingState,
-    pub camera_uniform: CameraUniform,
-    pub transform_bind_state: DataBindingState,
 
+    // render
+    pub render_state: RenderState,
+
+    // window
     pub window: winit::window::Window,
-    // pub event_loop: EventLoop<()>,
 
+    // world objects
     pub camera: PerspectiveCamera,
     pub camera_controller: SimplePerspectiveCameraController,
-
-    pub render_pipeline: SimpleRenderPipeline,
-
     pub scene: DruvisScene,
 
+    // resource managers
     pub shader_manager: ShaderManager,
 }
 
@@ -66,27 +65,14 @@ impl DruvisInstance {
         }
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let render_data = RenderData {
-            device: &self.device,
-            scene: &self.scene,
-            queue: &self.queue,
-            surface: self.surface.as_ref().unwrap(),
-            surface_config: &self.surface_config,
-            camera: &self.camera,
-            transform_bind_state: &self.transform_bind_state,
-            camera_bind_state: &self.camera_bind_state,
-            camera_uniform: &self.camera_uniform,
-        };
-        self.render_pipeline.render(&render_data);
+    pub fn render(&mut self, pipeline: &SimpleRenderPipeline) -> Result<(), wgpu::SurfaceError> {
+
+        pipeline.render(self);
 
         Ok(())
     }
 
     pub async fn new(window: Window) -> Self {
-        // let event_loop = EventLoop::new();
-        
-
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
@@ -117,6 +103,8 @@ impl DruvisInstance {
             None
         ).await.unwrap();
 
+        let render_state = RenderState::new(&device).await;
+
         let surface_caps = surface.get_capabilities(&adapter);
         let surface_format = surface_caps.formats.iter()
             .copied()
@@ -136,17 +124,17 @@ impl DruvisInstance {
         let camera = PerspectiveCamera::default();
         let camera_controller = SimplePerspectiveCameraController::default();
 
-        let render_pipeline = SimpleRenderPipeline;
-
-        let camera_bind_state = DataBindingState::new(&device, camera.get_camera_uniform(), "camera_uniform");
-        let transform_bind_state = DataBindingState::new(&device, TransformationUniform::new(), "transform_uniform");
+        // let render_pipeline = SimpleRenderPipeline;
 
         let mut shader_manager = ShaderManager::new();
         shader_manager.add_search_path(Path::new("E:\\rust\\druvis\\druvis-core\\shaders").to_path_buf());
 
         let scene = DruvisScene::simple_test_scene(
             &device,
-            &[&camera_bind_state.bind_group_layout, &transform_bind_state.bind_group_layout],
+            &[
+                &PerFrameUniform::get_bind_group_layout(&device),
+                &PerObjectUniform::get_bind_group_layout(&device),
+            ],
             surface_format,
             None,
             &shader_manager,
@@ -159,14 +147,12 @@ impl DruvisInstance {
             surface_config: config,
             window,
             // event_loop,
-            camera_uniform: camera.get_camera_uniform(),
             camera,
             camera_controller,
-            render_pipeline,
+            // render_pipeline,
             scene,
-            camera_bind_state,
-            transform_bind_state,
             shader_manager,
+            render_state,
         }
     }
 }
@@ -176,6 +162,8 @@ pub async fn run() {
     let window = WindowBuilder::new().build(&el).unwrap();
 
     let mut state = DruvisInstance::new(window).await;
+
+    let rp = SimpleRenderPipeline::new();
 
     el.run(move |event, _, control_flow|  match event {
         Event::WindowEvent {
@@ -208,7 +196,7 @@ pub async fn run() {
             // let dt = now - last_render_time;
             // last_render_time = now;
             // state.update(dt);
-            match state.render() {
+            match state.render(&rp) {
                 Ok(_) => {},
                 // Err(wgpu::SurfaceError::Lost) => self.resize(state.size),
                 Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,

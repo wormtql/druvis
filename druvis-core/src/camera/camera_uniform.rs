@@ -1,7 +1,7 @@
 use cgmath::{Matrix4, SquareMatrix};
 
 #[repr(C)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CameraUniform {
     pub druvis_world_space_camera_position: [f32; 4],
     pub druvis_view_matrix: [[f32; 4]; 4],

@@ -6,8 +6,59 @@ use crate::{vertex::vertex::ModelVertex, common::util_traits::AsBytes, utils};
 pub struct DruvisMesh {
     pub vertex_buffer: wgpu::Buffer,
     pub index_buffer: wgpu::Buffer,
+    // number of indices
     pub num_elements: u32,
     pub name: String,
+    pub submeshes: Vec<(u64, u64)>,
+}
+
+impl DruvisMesh {
+    pub fn get_submesh_index_count(&self, submesh_index: usize) -> u64 {
+        let (start, end) = self.submeshes[submesh_index];
+        end - start
+    }
+
+    pub fn get_index_buffer_slice(&self, index: usize) -> wgpu::BufferSlice {
+        if index >= self.submeshes.len() {
+            return self.index_buffer.slice(..);
+        }
+
+        let (start, end) = self.submeshes[index];
+        self.index_buffer.slice(start..end)
+    }
+
+    pub fn new(
+        device: &wgpu::Device,
+        label: &str,
+        vertices: Vec<ModelVertex>,
+        indices: Vec<u32>,
+        submeshes: Vec<(u64, u64)>
+    ) -> Self {
+        let vertex_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some((String::from(label) + "_vertex_buffer").as_str()),
+                contents: utils::reinterpret_slice::<ModelVertex, u8>(&vertices),
+                usage: wgpu::BufferUsages::VERTEX
+            }
+        );
+        let index_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some((String::from(label) + "_index_buffer").as_str()),
+                contents: utils::reinterpret_slice::<u32, u8>(&indices),
+                usage: wgpu::BufferUsages::INDEX
+            }
+        );
+
+        Self {
+            vertex_buffer,
+            index_buffer,
+            num_elements: indices.len() as u32,
+            name: String::from(label),
+            submeshes
+        }
+    }
+
+    // pub fn from_vertices_and_indices(vertices: )
 }
 
 impl DruvisMesh {
@@ -81,7 +132,8 @@ impl DruvisMesh {
             vertex_buffer,
             index_buffer,
             num_elements: 36,
-            name: String::from("cube")
+            name: String::from("cube"),
+            submeshes: Vec::new(),
         }
     }
 }

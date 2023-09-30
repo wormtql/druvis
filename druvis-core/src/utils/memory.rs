@@ -44,3 +44,4 @@ pub fn reinterpret_slice<T, U>(buf: &[T]) -> &[U] {
         std::slice::from_raw_parts(ptr, elements)
     }
 }
+

@@ -1,3 +1,5 @@
+#![feature(vec_into_raw_parts)]
+
 pub mod camera;
 pub mod utils;
 pub mod binding;

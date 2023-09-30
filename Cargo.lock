@@ -394,6 +394,8 @@ name = "druvis-mmd-parser"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "druvis-core",
+ "wgpu",
 ]
 
 [[package]]

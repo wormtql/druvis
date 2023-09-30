@@ -1,4 +1,4 @@
-use crate::{game_object::{components::MeshRendererData, TransformComponentData}, rendering::rendering::DruvisDrawModel, common::{util_traits::AsBytes, transformation_uniform::TransformationUniform}, camera::camera::GetCameraUniform};
+use crate::{game_object::{components::MeshRendererData, TransformComponentData}, camera::camera::GetCameraUniform, instance::instance::DruvisInstance};
 
 use super::render_pipeline::DruvisRenderPipeline;
 
@@ -10,17 +10,21 @@ impl SimpleRenderPipeline {
     }
 }
 
-impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
-    fn render(&self, render_data: &super::render_pipeline::RenderData<'a>) {
-        // update camera uniform
-        let queue = render_data.queue;
-        let camera_uniform = render_data.camera.get_camera_uniform();
-        queue.write_buffer(&render_data.camera_bind_state.buffer, 0, camera_uniform.druvis_as_bytes());
+impl DruvisRenderPipeline for SimpleRenderPipeline {
+    fn render(&self, ins: &mut DruvisInstance) {
+        // let device = &ins.device;
+        let queue = &ins.queue;
 
-        let components = render_data.scene.get_components::<MeshRendererData>();
+        // update per frame uniforms
+        ins.render_state.per_frame_data.camera_uniform = ins.camera.get_camera_uniform();
+        ins.render_state.write_per_frame_buffer(queue);
 
-        let output = render_data.surface.get_current_texture().unwrap();
-        let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let components = ins.scene.get_components::<MeshRendererData>();
+
+        let output = ins.surface.as_ref().unwrap().get_current_texture().unwrap();
+        // let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        ins.render_state.set_color_target(&output.texture);
         
         for comp in components.iter() {
             let mesh_renderer = &comp.borrow().data;
@@ -33,66 +37,14 @@ impl<'a> DruvisRenderPipeline<'a> for SimpleRenderPipeline {
             let mesh = mesh_renderer.mesh.as_ref().unwrap();
             let material = mesh_renderer.material.as_ref().unwrap();
 
-            // write transformation uniform
-            let transform_uniform = TransformationUniform {
-                druvis_matrix_m: transform.borrow().data.get_model_matrix()
-            };
-            queue.write_buffer(&render_data.transform_bind_state.buffer, 0, transform_uniform.druvis_as_bytes());
-
-            let mut encoder = render_data.device.create_command_encoder(
-                &wgpu::CommandEncoderDescriptor {
-                    label: Some("render_encoder")
-                }
+            ins.render_state.draw_mesh(
+                &ins.device,
+                &ins.queue,
+                &mesh.borrow(),
+                &material.borrow(),
+                transform.borrow().data.get_model_matrix(),
+                None
             );
-
-            let mesh_borrow = mesh.borrow();
-            let material_borrow = material.borrow();
-
-            material_borrow.update_buffer(queue);
-    
-            {
-                let mut render_pass = encoder.begin_render_pass(
-                    &wgpu::RenderPassDescriptor {
-                        label: Some("render_pass"),
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color {
-                                    r: 0.2,
-                                    g: 0.2,
-                                    b: 0.3,
-                                    a: 1.0
-                                }),
-                                store: true,
-                            },
-                        })],
-                        depth_stencil_attachment: None,
-                        // depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                        //     view: &self.depth_texture.view,
-                        //     depth_ops: Some(wgpu::Operations {
-                        //         load: wgpu::LoadOp::Clear(1.0),
-                        //         store: true
-                        //     }),
-                        //     stencil_ops: None,
-                        // })
-                    }
-                );
-
-                // bind camera/transform
-                render_pass.set_bind_group(0, &render_data.camera_bind_state.bind_group, &[]);
-                render_pass.set_bind_group(1, &render_data.transform_bind_state.bind_group, &[]);
-    
-                render_pass.draw_mesh(
-                    render_data.device,
-                    &*mesh_borrow,
-                    &*material_borrow,
-                    render_data.surface_config.format,
-                    None
-                );
-            }            
-
-            queue.submit(std::iter::once(encoder.finish()));
         }
 
         output.present();
