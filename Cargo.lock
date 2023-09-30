@@ -399,6 +399,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "druvis-test"
+version = "0.1.0"
+dependencies = [
+ "cgmath",
+ "druvis-core",
+ "druvis-mmd-parser",
+ "instant",
+ "pollster",
+ "wgpu",
+ "winit",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

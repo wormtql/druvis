@@ -1,0 +1,15 @@
+[package]
+name = "druvis-test"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+druvis-core = { path = "../druvis-core" }
+druvis-mmd-parser = { path = "../druvis-mmd-parser" }
+wgpu = { version = "0.17", features = ["serde", "trace", "replay"] }
+cgmath = { version = "0.18.0", features = ["serde"] }
+winit = "0.28"
+instant = "0.1"
+pollster = "0.3"

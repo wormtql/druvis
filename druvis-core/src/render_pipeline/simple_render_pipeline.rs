@@ -20,7 +20,7 @@ impl DruvisRenderPipeline for SimpleRenderPipeline {
         ins.render_state.write_per_frame_buffer(queue);
         // println!("{:?}", ins.render_state.per_frame_data.camera_uniform);
 
-        let components = ins.scene.get_components::<MeshRendererData>();
+        let components = ins.scene.as_ref().unwrap().get_components::<MeshRendererData>();
 
         let output = ins.surface.as_ref().unwrap().get_current_texture().unwrap();
         // let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());

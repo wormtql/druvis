@@ -11,6 +11,7 @@ pub struct DruvisInstance {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub size: PhysicalSize<u32>,
+    pub builtin_bind_group_layouts: Vec<wgpu::BindGroupLayout>,
 
     // render
     pub render_state: RenderState,
@@ -20,7 +21,7 @@ pub struct DruvisInstance {
 
     // world objects
     pub camera: PerspectiveCamera,
-    pub scene: DruvisScene,
+    pub scene: Option<DruvisScene>,
 
     // camera control
     pub camera_controller: SimplePerspectiveCameraController,
@@ -66,6 +67,9 @@ impl DruvisInstance {
             self.surface_config.height = new_size.height;
             self.surface.as_ref().unwrap().configure(&self.device, &self.surface_config);
 
+            // reset camera aspect
+            self.camera.aspect = new_size.width as f32 / new_size.height as f32;
+
             // self.config.width = new_size.width;
             // self.config.height = new_size.height;
             // self.surface.configure(&self.device, &self.config);
@@ -83,6 +87,10 @@ impl DruvisInstance {
         pipeline.render(self);
 
         Ok(())
+    }
+
+    pub fn get_builtin_bind_group_layout_ref(&self) -> Vec<&wgpu::BindGroupLayout> {
+        self.builtin_bind_group_layouts.iter().collect()
     }
 
     pub async fn new(window: Window) -> Self {
@@ -154,15 +162,20 @@ impl DruvisInstance {
         let mut material_manager = MaterialManager::new();
         material_manager.add_search_path(Path::new("E:\\rust\\druvis\\druvis-core\\materials").to_path_buf());
 
-        let scene = DruvisScene::simple_test_scene(
-            &device,
-            &[
-                &PerFrameUniform::get_bind_group_layout(&device),
-                &PerObjectUniform::get_bind_group_layout(&device),
-            ],
-            &shader_manager,
-            &material_manager,
-        );
+        // let scene = DruvisScene::simple_test_scene(
+        //     &device,
+        //     &[
+        //         &PerFrameUniform::get_bind_group_layout(&device),
+        //         &PerObjectUniform::get_bind_group_layout(&device),
+        //     ],
+        //     &shader_manager,
+        //     &material_manager,
+        // );
+
+        let builtin_bind_group_layouts = vec![
+            PerFrameUniform::get_bind_group_layout(&device),
+            PerObjectUniform::get_bind_group_layout(&device),
+        ];
 
         Self {
             surface: Some(surface),
@@ -175,11 +188,12 @@ impl DruvisInstance {
             camera,
             camera_controller,
             // render_pipeline,
-            scene,
+            scene: None,
             shader_manager,
             material_manager,
             render_state,
             mouse_pressed: false,
+            builtin_bind_group_layouts
         }
     }
 }
@@ -193,6 +207,14 @@ pub async fn run() {
     let rp = SimpleRenderPipeline::new();
 
     let mut last_render_time = instant::Instant::now();
+
+    let scene = DruvisScene::simple_test_scene(
+        &state.device,
+        &state.get_builtin_bind_group_layout_ref(),
+        &state.shader_manager,
+        &state.material_manager,
+    );
+    state.scene = Some(scene);
 
     el.run(move |event, _, control_flow|  match event {
         Event::WindowEvent {
