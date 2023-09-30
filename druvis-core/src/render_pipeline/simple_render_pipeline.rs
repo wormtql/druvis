@@ -18,6 +18,7 @@ impl DruvisRenderPipeline for SimpleRenderPipeline {
         // update per frame uniforms
         ins.render_state.per_frame_data.camera_uniform = ins.camera.get_camera_uniform();
         ins.render_state.write_per_frame_buffer(queue);
+        // println!("{:?}", ins.render_state.per_frame_data.camera_uniform);
 
         let components = ins.scene.get_components::<MeshRendererData>();
 

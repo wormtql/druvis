@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use winit::{window::{Window, WindowBuilder}, event_loop::{EventLoop, ControlFlow}, event::{Event, WindowEvent, KeyboardInput, MouseButton, ElementState, VirtualKeyCode, DeviceEvent}};
+use winit::{window::{Window, WindowBuilder}, event_loop::{EventLoop, ControlFlow}, event::{Event, WindowEvent, KeyboardInput, MouseButton, ElementState, VirtualKeyCode, DeviceEvent}, dpi::PhysicalSize};
 
-use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::GetCameraUniform, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform, shader::shader_manager::ShaderManager, rendering::{render_state::RenderState, uniform::{PerFrameUniform, PerObjectUniform}}};
+use crate::{camera::{perspective_camera::{PerspectiveCamera, SimplePerspectiveCameraController}, camera::{GetCameraUniform, CameraController}, camera_uniform::CameraUniform}, render_pipeline::{simple_render_pipeline::SimpleRenderPipeline, render_pipeline::{DruvisRenderPipeline}}, scene::scene::DruvisScene, binding::data_binding_state::DataBindingState, common::transformation_uniform::TransformationUniform, shader::shader_manager::ShaderManager, rendering::{render_state::RenderState, uniform::{PerFrameUniform, PerObjectUniform}}};
 
 pub struct DruvisInstance {
     // device and surface
@@ -10,6 +10,7 @@ pub struct DruvisInstance {
     pub surface_config: wgpu::SurfaceConfiguration,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+    pub size: PhysicalSize<u32>,
 
     // render
     pub render_state: RenderState,
@@ -19,8 +20,11 @@ pub struct DruvisInstance {
 
     // world objects
     pub camera: PerspectiveCamera,
-    pub camera_controller: SimplePerspectiveCameraController,
     pub scene: DruvisScene,
+
+    // camera control
+    pub camera_controller: SimplePerspectiveCameraController,
+    pub mouse_pressed: bool,
 
     // resource managers
     pub shader_manager: ShaderManager,
@@ -29,40 +33,48 @@ pub struct DruvisInstance {
 impl DruvisInstance {
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
-            // WindowEvent::KeyboardInput {
-            //     input:
-            //         KeyboardInput {
-            //             virtual_keycode: Some(key),
-            //             state,
-            //             ..
-            //         },
-            //     ..
-            // } => self.camera_controller.process_keyboard(*key, *state),
-            // WindowEvent::MouseWheel { delta, .. } => {
-            //     self.camera_controller.process_scroll(delta);
-            //     true
-            // }
-            // WindowEvent::MouseInput {
-            //     button: MouseButton::Left,
-            //     state,
-            //     ..
-            // } => {
-            //     self.mouse_pressed = *state == ElementState::Pressed;
-            //     true
-            // }
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        virtual_keycode: Some(key),
+                        state,
+                        ..
+                    },
+                ..
+            } => self.camera_controller.process_keyboard(*key, *state),
+            WindowEvent::MouseWheel { delta, .. } => {
+                self.camera_controller.process_scroll(delta);
+                true
+            }
+            WindowEvent::MouseInput {
+                button: MouseButton::Left,
+                state,
+                ..
+            } => {
+                self.mouse_pressed = *state == ElementState::Pressed;
+                true
+            }
             _ => false,
         }
     }
 
     pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            // self.size = new_size;
+        if new_size.width > 0 && new_size.height > 0 && self.surface.is_some() {
+            self.size = new_size;
+            self.surface_config.width = new_size.width;
+            self.surface_config.height = new_size.height;
+            self.surface.as_ref().unwrap().configure(&self.device, &self.surface_config);
+
             // self.config.width = new_size.width;
             // self.config.height = new_size.height;
             // self.surface.configure(&self.device, &self.config);
             // self.depth_texture = texture::Texture::create_depth_texture(&self.device, &self.config, "depth_texture");
             // self.projection.resize(new_size.width, new_size.height);
         }
+    }
+
+    pub fn update(&mut self, delta_time: instant::Duration) {
+        self.camera_controller.update_camera(&mut self.camera, delta_time)
     }
 
     pub fn render(&mut self, pipeline: &SimpleRenderPipeline) -> Result<(), wgpu::SurfaceError> {
@@ -121,12 +133,21 @@ impl DruvisInstance {
         };
         surface.configure(&device, &config);
 
-        let camera = PerspectiveCamera::default();
-        let camera_controller = SimplePerspectiveCameraController::default();
+        let camera = PerspectiveCamera::new(
+            (0.0, 0.0, 1.0),
+            cgmath::Deg(-90.0),
+            cgmath::Deg(-20.0),
+            size.width as f32 / size.height as f32,
+            cgmath::Deg(45.0),
+            0.1,
+            100.0
+        );
+        let camera_controller = SimplePerspectiveCameraController::new(4.0, 1.0);
 
         // let render_pipeline = SimpleRenderPipeline;
 
         let mut shader_manager = ShaderManager::new();
+        // todo use more robust path
         shader_manager.add_search_path(Path::new("E:\\rust\\druvis\\druvis-core\\shaders").to_path_buf());
 
         let scene = DruvisScene::simple_test_scene(
@@ -146,6 +167,7 @@ impl DruvisInstance {
             queue,
             surface_config: config,
             window,
+            size,
             // event_loop,
             camera,
             camera_controller,
@@ -153,6 +175,7 @@ impl DruvisInstance {
             scene,
             shader_manager,
             render_state,
+            mouse_pressed: false,
         }
     }
 }
@@ -164,6 +187,8 @@ pub async fn run() {
     let mut state = DruvisInstance::new(window).await;
 
     let rp = SimpleRenderPipeline::new();
+
+    let mut last_render_time = instant::Instant::now();
 
     el.run(move |event, _, control_flow|  match event {
         Event::WindowEvent {
@@ -193,9 +218,9 @@ pub async fn run() {
         },
         Event::RedrawRequested(window_id) if window_id == state.window.id() => {
             let now = instant::Instant::now();
-            // let dt = now - last_render_time;
-            // last_render_time = now;
-            // state.update(dt);
+            let dt = now - last_render_time;
+            last_render_time = now;
+            state.update(dt);
             match state.render(&rp) {
                 Ok(_) => {},
                 // Err(wgpu::SurfaceError::Lost) => self.resize(state.size),
@@ -206,12 +231,12 @@ pub async fn run() {
         Event::MainEventsCleared => {
             state.window.request_redraw();
         },
-        // Event::DeviceEvent {
-        //     event: DeviceEvent::MouseMotion{ delta, },
-        //     .. // We're not using device_id currently
-        // } => if state.mouse_pressed {
-        //     state.camera_controller.process_mouse(delta.0, delta.1)
-        // }
+        Event::DeviceEvent {
+            event: DeviceEvent::MouseMotion{ delta, },
+            .. // We're not using device_id currently
+        } => if state.mouse_pressed {
+            state.camera_controller.process_mouse(delta.0, delta.1)
+        }
         _ => {}
     });
 }

@@ -1,5 +1,6 @@
 use crate::{binding::bind_group_layout_builder::BindGroupLayoutBuilder, camera::camera_uniform::CameraUniform, common::transformation_uniform::TransformationUniform};
 
+#[repr(C)]
 #[derive(Default, Debug)]
 pub struct PerFrameUniform {
     pub camera_uniform: CameraUniform,
@@ -16,6 +17,7 @@ impl PerFrameUniform {
     }
 }
 
+#[repr(C)]
 #[derive(Default, Debug)]
 pub struct PerObjectUniform {
     pub transform: TransformationUniform
