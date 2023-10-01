@@ -1,10 +1,11 @@
-use std::mem;
+use std::{mem, collections::HashMap, path::PathBuf, rc::Rc, cell::RefCell};
 use anyhow::Result;
-use druvis_core::{mesh::mesh::DruvisMesh, vertex::vertex::ModelVertex};
+use druvis_core::{mesh::mesh::DruvisMesh, vertex::vertex::ModelVertex, material::material::DruvisMaterial, texture::texture::DruvisTextureAndSampler, shader::shader_manager::ShaderManager, game_object::{DruvisGameObject, DruvisComponent, components::MeshRendererData, game_object::DruvisGameObjectExt}};
 use crate::{utils, pmx::structs::{PMXVertexData, PMXMaterialData}};
 
 use super::structs::{PMXHeaderRaw, PMXGlobalsRaw, PMXGlobals, PMXHeader, PMXSurfaceData};
 
+#[derive(Clone, Debug)]
 pub struct PMXFormat {
     pub header: PMXHeader,
     pub globals: PMXGlobals,
@@ -12,9 +13,82 @@ pub struct PMXFormat {
     pub surfaces: Vec<PMXSurfaceData>,
     pub texture_paths: Vec<String>,
     pub materials: Vec<PMXMaterialData>,
+
+    model_path: PathBuf,
 }
 
 impl PMXFormat {
+    pub fn create_game_object(
+        self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        shader_manager: &ShaderManager,
+        builtin_bind_group_layouts: &[&wgpu::BindGroupLayout],
+    ) -> Rc<RefCell<DruvisGameObject>> {
+        println!("vertex count: {}", self.vertices.len());
+        println!("index count: {}", self.surfaces.len() * 3);
+        // println!("mat {}", self.materials[self.materials.len() - 1].)
+
+        let mut go = DruvisGameObject::new();
+
+        let mesh = self.clone().to_druvis_mesh(device);
+        let mut mesh_renderer = DruvisComponent::<MeshRendererData>::default();
+        mesh_renderer.data.mesh = Some(Rc::new(RefCell::new(mesh)));
+
+        let mut mats = Vec::new();
+        let material_count = self.materials.len();
+        for i in 0..material_count {
+            let mat = self.create_material(device, queue, i, shader_manager, builtin_bind_group_layouts);
+            mats.push(Rc::new(RefCell::new(mat.unwrap())));
+        }
+        mesh_renderer.data.materials = mats;
+
+        go.add_component(mesh_renderer);
+
+        go
+    }
+
+    pub fn create_material(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        mat_index: usize,
+        shader_manager: &ShaderManager,
+        builtin_bind_group_layouts: &[&wgpu::BindGroupLayout],
+    ) -> Option<DruvisMaterial> {
+        let mat = &self.materials[mat_index];
+
+        let mut textures = HashMap::new();
+        let diffuse_texture_path = self.model_path.join(&self.texture_paths[mat.texture_index as usize]);
+        let diffuse_texture = DruvisTextureAndSampler::from_path(
+            device,
+            queue,
+            &diffuse_texture_path,
+            wgpu::TextureFormat::Rgba8UnormSrgb,
+            &wgpu::SamplerDescriptor {
+                address_mode_u: wgpu::AddressMode::ClampToEdge,
+                address_mode_v: wgpu::AddressMode::ClampToEdge,
+                address_mode_w: wgpu::AddressMode::ClampToEdge,
+                mag_filter: wgpu::FilterMode::Linear,
+                min_filter: wgpu::FilterMode::Nearest,
+                mipmap_filter: wgpu::FilterMode::Linear,
+                ..Default::default()
+            },
+            wgpu::SamplerBindingType::Filtering
+        );
+        textures.insert(String::from("albedo_texture"), Rc::new(diffuse_texture));
+
+        let shader = shader_manager.get_shader(device, builtin_bind_group_layouts, "druvis.albedo")?;
+        let druvis_mat = DruvisMaterial::create_material(
+            device,
+            shader,
+            textures,
+            "mmd_mat"
+        );
+
+        druvis_mat
+    }
+
     pub fn to_druvis_mesh(self, device: &wgpu::Device) -> DruvisMesh {
         let mut vertices: Vec<ModelVertex> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
@@ -39,7 +113,8 @@ impl PMXFormat {
 
         let mut start: u64 = 0;
         for mat in self.materials.iter() {
-            submeshes.push((start, mat.surface_count as u64));
+            // println!("start {}, {}, range {}", start, start + mat.surface_count as u64, mat.surface_count);
+            submeshes.push((start, start + mat.surface_count as u64));
             start += mat.surface_count as u64;
         }
 
@@ -85,7 +160,7 @@ impl PmxParser {
         Ok(result)
     }
 
-    pub fn parse(&self, data: &[u8]) -> Result<PMXFormat> {
+    pub fn parse(&self, data: &[u8], model_path: PathBuf) -> Result<PMXFormat> {
         let mut cursor: usize = 0;
 
         let header_raw = self.parse_header(data, &mut cursor)?;
@@ -147,7 +222,9 @@ impl PmxParser {
             vertices,
             surfaces,
             texture_paths,
-            materials
+            materials,
+
+            model_path,
         })
     }
 }

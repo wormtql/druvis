@@ -13,6 +13,14 @@ pub struct DruvisMesh {
 }
 
 impl DruvisMesh {
+    pub fn get_submesh_count(&self) -> usize {
+        if self.submeshes.len() == 0 || self.submeshes.len() == 1 {
+            1
+        } else {
+            self.submeshes.len()
+        }
+    }
+
     pub fn get_submesh_index_count(&self, submesh_index: usize) -> u64 {
         let (start, end) = self.submeshes[submesh_index];
         end - start
@@ -24,7 +32,9 @@ impl DruvisMesh {
         }
 
         let (start, end) = self.submeshes[index];
-        self.index_buffer.slice(start..end)
+        // because u32 has 4bytes
+        self.index_buffer.slice(start * 4..end * 4)
+        // self.index_buffer.slice(..)
     }
 
     pub fn new(

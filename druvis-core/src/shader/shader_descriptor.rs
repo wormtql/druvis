@@ -40,6 +40,10 @@ impl ShaderDescriptor {
         for item in self.shader_value_layout.iter() {
             size += item.ty.get_size();
         }
+        // because be can't create 0-sized buffer
+        if size == 0 {
+            size = 1;
+        }
 
         device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {

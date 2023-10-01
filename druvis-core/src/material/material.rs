@@ -1,6 +1,6 @@
 use std::{rc::Rc, collections::HashMap, cell::RefCell};
 
-use crate::{shader::{shader::DruvisShader, shader_property::ShaderPropertyValue, shader_manager::ShaderManager}, binding::{bind_index::{BIND_GROUP_SHADER_PROPERTIES}, bind_group_builder::BindGroupBuilder}, texture::texture::DruvisTextureAndSampler, utils};
+use crate::{shader::{shader::DruvisShader, shader_property::{ShaderPropertyValue, ShaderTexturePropertyType}, shader_manager::ShaderManager}, binding::{bind_index::{BIND_GROUP_SHADER_PROPERTIES}, bind_group_builder::BindGroupBuilder}, texture::texture::DruvisTextureAndSampler, utils};
 
 use super::material_descriptor::MaterialDescriptor;
 
@@ -107,10 +107,13 @@ impl DruvisMaterial {
         bind_group_builder.add_buffer(0, &shader.shader_bind_state.value_buffer);
 
         for tex_layout_entry in shader.shader_texture_layout.iter() {
-            // todo use a default black texture
-            let tex = textures.get(&tex_layout_entry.name).unwrap();
-            bind_group_builder.add_druvis_texture_and_sampler(binding_index, tex);
-            binding_index += 2;
+            if tex_layout_entry.ty == ShaderTexturePropertyType::Texture {
+                // todo use a default black texture
+                // println!("tex layout entry name: {}", tex_layout_entry.name);
+                let tex = textures.get(&tex_layout_entry.name).unwrap();
+                bind_group_builder.add_druvis_texture_and_sampler(binding_index, tex);
+                binding_index += 2;
+            }
         }
 
         let mat = DruvisMaterial {

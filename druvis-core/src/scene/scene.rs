@@ -54,7 +54,7 @@ impl DruvisScene {
             shader_manager
         );
 
-        mesh_renderer.data.material = material;
+        mesh_renderer.data.materials = vec![material.unwrap()];
 
         go.add_component(mesh_renderer);
 

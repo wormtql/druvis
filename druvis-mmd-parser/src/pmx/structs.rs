@@ -1,13 +1,6 @@
 use anyhow::Result;
 use crate::utils;
 
-type byte = i8;
-type ubyte = u8;
-type short = i16;
-type ushort = u16;
-type int = i32;
-type uint = u32;
-type float = f32;
 type text = (i32, Vec<u8>);
 
 pub struct PMXHeaderRaw {
@@ -55,7 +48,7 @@ impl PMXHeaderRaw {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PMXHeader {
     pub signature: [i8; 4],
     pub version: f32,
@@ -190,7 +183,7 @@ impl From<i8> for PMXIndexType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PMXGlobals {
     pub text_encoding: TextEncodingType,
     pub additional_vec4_count: i8,
@@ -240,6 +233,7 @@ impl PMXWeightDeformType {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct BDEF1Data {
     pub bone_index: Vec<u8>,
 }
@@ -252,6 +246,7 @@ impl BDEF1Data {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct BDEF2Data {
     pub bone_index1: Vec<u8>,
     pub bone_index2: Vec<u8>,
@@ -268,6 +263,7 @@ impl BDEF2Data {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct BDEF4Data {
     pub bone_index1: Vec<u8>,
     pub bone_index2: Vec<u8>,
@@ -294,6 +290,7 @@ impl BDEF4Data {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct SDEFData {
     pub bone_index1: Vec<u8>,
     pub bone_index2: Vec<u8>,
@@ -316,6 +313,7 @@ impl SDEFData {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct QDEFData {
     pub bone_index1: Vec<u8>,
     pub bone_index2: Vec<u8>,
@@ -342,6 +340,7 @@ impl QDEFData {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum PMXWeightDeformData {
     BDEF1(BDEF1Data),
     BDEF2(BDEF2Data),
@@ -362,6 +361,7 @@ impl PMXWeightDeformData {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct PMXVertexData {
     pub position: [f32; 3],
     pub normal: [f32; 3],
@@ -396,6 +396,7 @@ impl PMXVertexData {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct PMXSurfaceData {
     // for convenience, use i32 to represent a index type
     pub triangle: [i32; 3],
@@ -470,6 +471,7 @@ impl PMXToonValue {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct PMXMaterialData {
     pub material_name_local: String,
     pub material_name_universal: String,

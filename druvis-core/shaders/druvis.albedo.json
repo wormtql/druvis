@@ -1,0 +1,34 @@
+{
+    "name": "druvis.albedo",
+    "source": "",
+    "cull_mode": "back",
+    "blend_mode": {
+        "color": {
+            "srcFactor": "one",
+            "dstFactor": "zero",
+            "operation": "add"
+        },
+        "alpha": {
+            "srcFactor": "one",
+            "dstFactor": "zero",
+            "operation": "add"
+        }
+    },
+    "is_instancing": false,
+    "instancing_vertex_buffer_layout": null,
+    "shader_value_layout": [
+
+    ],
+    "shader_texture_layout": [
+        {
+            "ty": "Texture",
+            "name": "albedo_texture",
+            "texture_view_dimension": "2d"
+        },
+        {
+            "ty": "Sampler",
+            "name": "albedo_texture_sampler",
+            "sampler_type": "filtering"
+        }
+    ]
+}

@@ -96,6 +96,42 @@ impl RenderState {
         self.depth_format = Some(f);
     }
 
+    pub fn clear_depth(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) {
+        let mut encoder = device.create_command_encoder(
+            &wgpu::CommandEncoderDescriptor {
+                label: Some("draw_mesh")
+            }
+        );
+
+        {
+            let mut render_pass = encoder.begin_render_pass(
+                &wgpu::RenderPassDescriptor {
+                    label: Some("render_pass"),
+                    color_attachments: &[],
+                    depth_stencil_attachment: self.depth_format.map(|_| {
+                        wgpu::RenderPassDepthStencilAttachment {
+                            view: self.depth_target.as_ref().unwrap(),
+                            depth_ops: Some(wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(1.0),
+                                store: true,
+                            }),
+                            stencil_ops: Some(wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(0),
+                                store: true
+                            })
+                        }
+                    })
+                }
+            );
+        }
+
+        queue.submit(std::iter::once(encoder.finish()));
+    }
+
     pub fn draw_mesh(
         &mut self,
         device: &wgpu::Device,
@@ -111,6 +147,8 @@ impl RenderState {
             }
         );
 
+        // println!("depth size {}", self.dep)
+
         // set per object transform
         self.per_object_data.transform.druvis_matrix_m = transform_matrix;
         queue.write_buffer(&self.per_object_bind_state.buffer, 0, self.per_object_data.druvis_as_bytes());
@@ -123,14 +161,18 @@ impl RenderState {
                         view: self.color_target.as_ref().unwrap(),
                         resolve_target: None,
                         ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: 0.2,
-                                g: 0.2,
-                                b: 0.3,
-                                a: 1.0
-                            }),
+                            load: wgpu::LoadOp::Load,
                             store: true,
-                        },
+                        }
+                        // ops: wgpu::Operations {
+                        //     load: wgpu::LoadOp::Clear(wgpu::Color {
+                        //         r: 0.2,
+                        //         g: 0.2,
+                        //         b: 0.3,
+                        //         a: 1.0
+                        //     }),
+                        //     store: true,
+                        // },
                     })],
                     depth_stencil_attachment: self.depth_format.map(|_| {
                         wgpu::RenderPassDepthStencilAttachment {

@@ -204,7 +204,11 @@ pub async fn run() {
 
     let mut state = DruvisInstance::new(window).await;
 
-    let rp = SimpleRenderPipeline::new();
+    let mut rp = SimpleRenderPipeline::new(&state.device, wgpu::Extent3d {
+        width: state.size.width,
+        height: state.size.height,
+        depth_or_array_layers: 1,
+    });
 
     let mut last_render_time = instant::Instant::now();
 
@@ -234,10 +238,13 @@ pub async fn run() {
                     ..
                 } => *control_flow = ControlFlow::Exit,
                 WindowEvent::Resized(physical_size) => {
+                    println!("resized event");
                     state.resize(*physical_size);
+                    rp.resize(&state.device, *physical_size);
                 }
                 WindowEvent::ScaleFactorChanged { scale_factor: _, new_inner_size } => {
                     state.resize(**new_inner_size);
+                    rp.resize(&state.device, **new_inner_size);
                 }
                 _ => {}
             }

@@ -1,6 +1,6 @@
-use std::{rc::Rc, cell::RefCell};
+use std::{rc::Rc, cell::RefCell, collections::HashMap, path::Path};
 
-use druvis_core::{instance::instance::DruvisInstance, render_pipeline::simple_render_pipeline::SimpleRenderPipeline, camera::camera::CameraController, scene::scene::DruvisScene, shader::shader_manager::ShaderManager, material::material_manager::MaterialManager, game_object::{DruvisGameObject, DruvisComponent, components::MeshRendererData, game_object::DruvisGameObjectExt}, mesh::mesh::DruvisMesh};
+use druvis_core::{instance::instance::DruvisInstance, render_pipeline::simple_render_pipeline::SimpleRenderPipeline, camera::camera::CameraController, scene::scene::DruvisScene, shader::shader_manager::ShaderManager, material::{material_manager::MaterialManager, material::DruvisMaterial}, game_object::{DruvisGameObject, DruvisComponent, components::MeshRendererData, game_object::DruvisGameObjectExt}, mesh::mesh::DruvisMesh};
 use druvis_mmd_parser::PmxParser;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::*, event::*};
 
@@ -12,13 +12,18 @@ pub async fn run() {
 
     let scene = create_scene(
         &state.device,
+        &state.queue,
         &state.get_builtin_bind_group_layout_ref(),
         &state.shader_manager,
         &state.material_manager
     );
     state.scene = Some(scene);
 
-    let rp = SimpleRenderPipeline::new();
+    let mut rp = SimpleRenderPipeline::new(&state.device, wgpu::Extent3d {
+        width: state.size.width,
+        height: state.size.height,
+        depth_or_array_layers: 1
+    });
 
     let mut last_render_time = instant::Instant::now();
 
@@ -41,9 +46,11 @@ pub async fn run() {
                 } => *control_flow = ControlFlow::Exit,
                 WindowEvent::Resized(physical_size) => {
                     state.resize(*physical_size);
+                    rp.resize(&state.device, *physical_size);
                 }
                 WindowEvent::ScaleFactorChanged { scale_factor: _, new_inner_size } => {
                     state.resize(**new_inner_size);
+                    rp.resize(&state.device, **new_inner_size);
                 }
                 _ => {}
             }
@@ -75,31 +82,31 @@ pub async fn run() {
 
 fn create_scene(
     device: &wgpu::Device,
+    queue: &wgpu::Queue,
     builtin_bind_group_layouts: &[&wgpu::BindGroupLayout],
     shader_manager: &ShaderManager,
     material_manager: &MaterialManager,
 ) -> DruvisScene {
     let model = include_bytes!("../../models/yoimiya/宵宫.pmx");
+    let model_path = Path::new("E:\\rust\\druvis\\models\\yoimiya");
     let parser = PmxParser::new();
 
-    let parse_result = parser.parse(model).unwrap();
-    let mesh = parse_result.to_druvis_mesh(device);
+    let parse_result = parser.parse(model, model_path.to_path_buf()).unwrap();
+    // let mesh = parse_result.to_druvis_mesh(device);
 
-    let go = DruvisGameObject::new();
+    // let go = DruvisGameObject::new();
 
-    let mut mesh_renderer = DruvisComponent::<MeshRendererData>::default();
-    mesh_renderer.data.mesh = Some(Rc::new(RefCell::new(mesh)));
+    // let mut mesh_renderer = DruvisComponent::<MeshRendererData>::default();
+    // mesh_renderer.data.mesh = Some(Rc::new(RefCell::new(mesh)));
 
-    let material = material_manager.get_material(
-        "druvis.color",
-        device,
-        builtin_bind_group_layouts,
-        shader_manager
-    );
+    // let shader = shader_manager.get_shader(device, builtin_bind_group_layouts, "druvis.albedo").unwrap();
+    // let material = DruvisMaterial::create_material(device, shader, HashMap::new(), "albedo").unwrap();
 
-    mesh_renderer.data.material = material;
+    // mesh_renderer.data.material = Some(Rc::new(RefCell::new(material)));
 
-    go.add_component(mesh_renderer);
+    // go.add_component(mesh_renderer);
+
+    let go = parse_result.create_game_object(device, queue, shader_manager, builtin_bind_group_layouts);
 
     let mut scene = DruvisScene::new();
     scene.add_object(go);
