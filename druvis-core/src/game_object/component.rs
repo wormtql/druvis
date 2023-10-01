@@ -17,6 +17,13 @@ impl<T: Default> Default for DruvisComponent<T> {
 }
 
 impl<T> DruvisComponent<T> {
+    pub fn new(data: T) -> Self {
+        Self {
+            game_object: None,
+            data
+        }
+    }
+
     pub fn get_game_object(&self) -> Option<Rc<RefCell<DruvisGameObject>>> {
         if self.game_object.is_none() {
             return None;

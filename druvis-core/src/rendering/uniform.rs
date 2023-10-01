@@ -1,9 +1,10 @@
-use crate::{binding::bind_group_layout_builder::BindGroupLayoutBuilder, camera::camera_uniform::CameraUniform, common::transformation_uniform::TransformationUniform};
+use crate::{binding::bind_group_layout_builder::BindGroupLayoutBuilder, camera::camera_uniform::CameraUniform, common::transformation_uniform::TransformationUniform, lighting::light_uniform::LightUniform};
 
 #[repr(C)]
 #[derive(Default, Debug)]
 pub struct PerFrameUniform {
     pub camera_uniform: CameraUniform,
+    pub light_uniform: LightUniform,
     // todo time, lighting etc
 }
 

@@ -63,10 +63,22 @@ impl DruvisGameObject {
 
 pub trait DruvisGameObjectExt {
     fn add_component<T: Any>(&self, component: DruvisComponent<T>) -> bool;
+
+    fn has_component<T: Any>(&self) -> bool;
+
+    fn get_component<T: Any>(&self) -> Option<Rc<RefCell<DruvisComponent<T>>>>;
 }
 
 impl DruvisGameObjectExt for Rc<RefCell<DruvisGameObject>> {
     fn add_component<T: Any>(&self, component: DruvisComponent<T>) -> bool {
         DruvisGameObject::add_component(self.clone(), component)
+    }
+
+    fn has_component<T: Any>(&self) -> bool {
+        DruvisGameObject::has_component::<T>(self.clone())
+    }
+
+    fn get_component<T: Any>(&self) -> Option<Rc<RefCell<DruvisComponent<T>>>> {
+        DruvisGameObject::get_component::<T>(self.clone())
     }
 }

@@ -1,6 +1,7 @@
 use std::{rc::Rc, cell::RefCell, collections::HashMap, path::Path};
 
-use druvis_core::{instance::instance::DruvisInstance, render_pipeline::simple_render_pipeline::SimpleRenderPipeline, camera::camera::CameraController, scene::scene::DruvisScene, shader::shader_manager::ShaderManager, material::{material_manager::MaterialManager, material::DruvisMaterial}, game_object::{DruvisGameObject, DruvisComponent, components::MeshRendererData, game_object::DruvisGameObjectExt}, mesh::mesh::DruvisMesh};
+use cgmath::{Quaternion, Euler, Deg};
+use druvis_core::{instance::instance::DruvisInstance, render_pipeline::simple_render_pipeline::SimpleRenderPipeline, camera::camera::CameraController, scene::scene::DruvisScene, shader::shader_manager::ShaderManager, material::{material_manager::MaterialManager, material::DruvisMaterial}, game_object::{DruvisGameObject, DruvisComponent, components::MeshRendererData, game_object::DruvisGameObjectExt, TransformComponentData}, mesh::mesh::DruvisMesh, lighting::light::{Light, LightType}};
 use druvis_mmd_parser::PmxParser;
 use winit::{event_loop::{EventLoop, ControlFlow}, window::*, event::*};
 
@@ -110,6 +111,24 @@ fn create_scene(
 
     let mut scene = DruvisScene::new();
     scene.add_object(go);
+
+    // add light
+    let light_go = DruvisGameObject::new();
+    let light = Light {
+        ty: LightType::Parallel,
+        intensity: 1.0,
+        color: cgmath::Vector3 { x: 0.7, y: 0.4, z: 0.3 }
+    };
+    light_go.add_component::<Light>(DruvisComponent::new(light));
+
+    let t = light_go.get_component::<TransformComponentData>().unwrap();
+    t.borrow_mut().data.rotation = Quaternion::from(Euler {
+        x: Deg(90.0),
+        y: Deg(45.0),
+        z: Deg(15.0),
+    });
+
+    scene.add_object(light_go);
 
     scene
 }

@@ -1,6 +1,6 @@
 use winit::dpi::PhysicalSize;
 
-use crate::{game_object::{components::MeshRendererData, TransformComponentData}, camera::camera::GetCameraUniform, instance::instance::DruvisInstance, texture::texture::DruvisTexture};
+use crate::{game_object::{components::MeshRendererData, TransformComponentData, game_object::DruvisGameObjectExt}, camera::camera::GetCameraUniform, instance::instance::DruvisInstance, texture::texture::DruvisTexture, lighting::light::Light};
 
 use super::render_pipeline::DruvisRenderPipeline;
 
@@ -56,8 +56,11 @@ impl DruvisRenderPipeline for SimpleRenderPipeline {
 
         // update per frame uniforms
         ins.render_state.per_frame_data.camera_uniform = ins.camera.get_camera_uniform();
+        // update light
+        let sun_go = ins.scene.as_ref().unwrap().get_sun_light().unwrap();
+        ins.render_state.per_frame_data.light_uniform = sun_go.get_component::<Light>().unwrap().borrow().get_light_uniform();
+
         ins.render_state.write_per_frame_buffer(queue);
-        // println!("{:?}", ins.render_state.per_frame_data.camera_uniform);
 
         let components = ins.scene.as_ref().unwrap().get_components::<MeshRendererData>();
 

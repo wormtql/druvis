@@ -14,3 +14,4 @@ pub mod scene;
 pub mod game_object;
 pub mod render_pipeline;
 pub mod instance;
+pub mod lighting;
